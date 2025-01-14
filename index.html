@@ -8,14 +8,27 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            max-width: 500px;
+            padding: 15px;
+            max-width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .game-wrapper {
+            max-width: 450px;
+            width: 100%;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            font-size: calc(20px + 2vw);
         }
 
         .game-container {
@@ -52,7 +65,8 @@
         .game-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 15px;
+            margin: auto 0;
         }
 
         .game-icon {
@@ -60,13 +74,16 @@
             background: white;
             border: none;
             border-radius: 12px;
-            padding: 8px;
+            padding: 6px;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: transform 0.2s;
+            width: 100%;
+            max-width: calc(42vw - 15px);
+            height: auto;
         }
 
         .game-icon:hover {
@@ -80,8 +97,17 @@
         }
 
         .prize-display {
-            font-size: 32px;
+            font-size: min(15vw, 72px);
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .prize-display.wild-icon {
+            font-size: min(25vw, 120px);
         }
 
         .coins-display {
@@ -140,6 +166,7 @@
 <body>
     <h1>איך היא כזאת יפה מה זה</h1>
     
+    <div class="game-wrapper">
     <div class="game-container">
         <div class="level-header">
             <div class="level-indicator">Level 1/6</div>
@@ -218,9 +245,17 @@
         }
 
         function initializeLevel() {
-            const icons = Array(4).fill(null).map(() => ({
+            // Create array of icon positions and shuffle them
+            const iconPositions = [1, 2, 3, 4];
+            for (let i = iconPositions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [iconPositions[i], iconPositions[j]] = [iconPositions[j], iconPositions[i]];
+            }
+
+            const icons = Array(4).fill(null).map((_, index) => ({
                 revealed: false,
-                prize: generatePrize()
+                prize: generatePrize(),
+                iconNumber: iconPositions[index]
             }));
 
             // Ensure exactly one wild icon
@@ -243,11 +278,13 @@
             icons.forEach((icon, index) => {
                 if (gameState.icons[index]?.revealed) {
                     const prize = gameState.icons[index].prize;
-                    icon.innerHTML = prize.type === 'wild' ? 
-                        '<div class="prize-display">🍅</div>' : 
-                        `<div class="prize-display">💰<br>${prize.amount}</div>`;
+                    if (prize.type === 'wild') {
+                        icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
+                    } else {
+                        icon.innerHTML = `<div class="prize-display">💰<br>${prize.amount}</div>`;
+                    }
                 } else {
-                    icon.innerHTML = `<img src="public/game-icons/icon${index + 1}.png" alt="Game icon ${index + 1}">`;
+                    icon.innerHTML = `<img src="public/game-icons/icon${gameState.icons[index].iconNumber}.png" alt="Game icon ${gameState.icons[index].iconNumber}">`;
                 }
             });
         }
