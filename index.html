@@ -122,7 +122,12 @@
             font-size: 32px;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            margin-top: auto;
+            position: fixed;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            max-width: 450px;
+            margin: 0 auto;
         }
 
         .dialog {
@@ -193,9 +198,9 @@
     <!-- Dialogs -->
     <div class="overlay" id="introOverlay"></div>
     <div class="dialog" id="introDialog">
-        <h2>!המשחק של שחר</h2>
+        <h2>המשחק של שחר</h2>
         <p style="font-weight: bold;">
-            ?מי השחר ששווה הכי הרבה נקודות<br>
+            מי השחר ששווה הכי הרבה נקודות<br>
             ולהיזהר מהעגבניות כמובן
         </p>
         <button>START GAME</button>
@@ -209,8 +214,8 @@
 
     <div class="overlay" id="winOverlay"></div>
     <div class="dialog" id="winDialog">
-        <h2>You did it!</h2>
-        <p id="finalScore"></p>
+        <h2>You did it</h2>
+        <p id="finalScore">Coins: 0</p>
         <button>START AGAIN</button>
     </div>
 
@@ -304,6 +309,10 @@
                 Object.values(elements.overlays).forEach(overlay => overlay.style.display = 'none');
                 elements.dialogs[type].style.display = 'block';
                 elements.overlays[type].style.display = 'block';
+                
+                if (type === 'win') {
+                    document.getElementById('finalScore').textContent = `Coins: ${gameState.coinsBalance}`;
+                }
             }
 
             function handleIconClick(index) {
