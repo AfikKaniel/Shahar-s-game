@@ -400,12 +400,17 @@
         }
 
         function startGame() {
+            // Remove any duplicate elements that might exist
+            document.querySelectorAll('.level-indicator:not(.level-header .level-indicator)').forEach(el => el.remove());
+            document.querySelectorAll('.quit-button:not(.level-header .quit-button)').forEach(el => el.remove());
+
             gameState = {
                 isPlaying: true,
                 currentLevel: 1,
                 coinsBalance: 0,
                 icons: []
             };
+            
             initializeLevel();
             document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
         }
