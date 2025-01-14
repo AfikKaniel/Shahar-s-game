@@ -97,17 +97,22 @@
         }
 
         .prize-display {
-            font-size: min(15vw, 72px);
+            font-size: min(10vw, 48px);
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
+            gap: 5px;
         }
 
         .prize-display.wild-icon {
-            font-size: min(25vw, 120px);
+            font-size: min(20vw, 96px);
+        }
+
+        .prize-display .amount {
+            font-size: min(8vw, 36px);
         }
 
         .coins-display {
@@ -281,7 +286,10 @@
                     if (prize.type === 'wild') {
                         icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
                     } else {
-                        icon.innerHTML = `<div class="prize-display">💰<br>${prize.amount}</div>`;
+                        icon.innerHTML = `<div class="prize-display">
+                            <span>💰</span>
+                            <span class="amount">${prize.amount}</span>
+                        </div>`;
                     }
                 } else {
                     icon.innerHTML = `<img src="public/game-icons/icon${gameState.icons[index].iconNumber}.png" alt="Game icon ${gameState.icons[index].iconNumber}">`;
