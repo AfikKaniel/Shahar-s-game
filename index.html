@@ -5,24 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>איך היא כזאת יפה מה זה</title>
     <style>
+        /* Reset and base styles */
         *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
+        /* Root level background */
         :root {
             background-color: #1E1E1E;
         }
 
-        html, 
+        /* HTML and Body backgrounds */
+        html {
+            background-color: #1E1E1E;
+            min-height: 100%;
+            height: 100%;
+        }
+
         body {
-            width: 100%;
-            min-height: 100vh;
-            background-color: #1E1E1E !important;
+            background-color: #1E1E1E;
+            min-height: 100%;
+            height: 100%;
             margin: 0;
-            padding: 0;
-            overflow-x: hidden;
+            padding: 15px;
+            -webkit-background-color: #1E1E1E;
+            color: #FFFFFF;
+        }
+
+        /* Wrapper to ensure full coverage */
+        #root-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #1E1E1E;
+            z-index: -1;
         }
         body {
             font-family: Arial, sans-serif;
@@ -188,6 +208,7 @@
     </style>
 </head>
 <body>
+    <div id="root-wrapper"></div>
     <h1>איך היא כזאת יפה מה זה</h1>
     
     <div class="game-wrapper">
