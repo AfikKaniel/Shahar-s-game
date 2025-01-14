@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>איך היא כזאת יפה מה זה</title>
     <style>
         /* Reset */
@@ -35,6 +34,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            padding-bottom: 100px;
         }
 
         h1 {
@@ -46,9 +46,10 @@
 
         .level-header {
             display: flex;
+            flex-direction: row;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .level-indicator {
@@ -76,6 +77,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
+            margin-bottom: 20px;
         }
 
         .game-icon {
@@ -128,6 +130,7 @@
             right: 15px;
             max-width: 450px;
             margin: 0 auto;
+            z-index: 10;
         }
 
         .dialog {
@@ -187,7 +190,10 @@
             </div>
 
             <div class="game-grid">
-                <!-- Icons will be dynamically inserted here -->
+                <button class="game-icon"><img src="public/game-icons/icon1.png" alt="Game icon 1"></button>
+                <button class="game-icon"><img src="public/game-icons/icon2.png" alt="Game icon 2"></button>
+                <button class="game-icon"><img src="public/game-icons/icon3.png" alt="Game icon 3"></button>
+                <button class="game-icon"><img src="public/game-icons/icon4.png" alt="Game icon 4"></button>
             </div>
         </div>
 
@@ -219,7 +225,6 @@
     </div>
 
     <script>
-        // Wait for DOM to be fully loaded before initializing
         document.addEventListener('DOMContentLoaded', function() {
             const TOTAL_LEVELS = 6;
             const CATEGORIES = {
@@ -254,6 +259,15 @@
                 }
             };
 
+            function shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+
             function getRandomInRange(min, max) {
                 return Math.floor(Math.random() * (max - min + 1)) + min;
             }
@@ -266,34 +280,18 @@
                 return { type: 'coins', category: 3, amount: getRandomInRange(CATEGORIES[3].min, CATEGORIES[3].max) };
             }
 
-            function updateUI() {
-                elements.levelIndicator.textContent = `Level ${gameState.currentLevel}/${TOTAL_LEVELS}`;
-                elements.coinsDisplay.textContent = `Coins: ${gameState.coinsBalance}`;
-                elements.quitButton.style.display = gameState.currentLevel > 1 ? 'block' : 'none';
-
-                elements.gameIcons.forEach((icon, index) => {
-                    if (gameState.icons[index]?.revealed) {
-                        const prize = gameState.icons[index].prize;
-                        if (prize.type === 'wild') {
-                            icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
-                        } else {
-                            icon.innerHTML = `<div class="prize-display">
-                                <span>💰</span>
-                                <span class="amount">${prize.amount}</span>
-                            </div>`;
-                        }
-                    } else {
-                        icon.innerHTML = `<img src="public/game-icons/icon${index + 1}.png" alt="Game icon ${index + 1}">`;
-                    }
-                });
-            }
-
             function initializeLevel() {
-                gameState.icons = Array(4).fill(null).map(() => ({
+                // Create base configuration for icons
+                const baseIcons = [1, 2, 3, 4];
+                const shuffledPositions = shuffleArray(baseIcons);
+                
+                gameState.icons = shuffledPositions.map(iconNum => ({
                     revealed: false,
-                    prize: generatePrize()
+                    prize: generatePrize(),
+                    iconNumber: iconNum
                 }));
 
+                // Ensure one wild icon
                 const hasWild = gameState.icons.some(icon => icon.prize.type === 'wild');
                 if (!hasWild) {
                     const randomIndex = Math.floor(Math.random() * 4);
@@ -303,15 +301,35 @@
                 updateUI();
             }
 
+            function updateUI() {
+                elements.levelIndicator.textContent = `Level ${gameState.currentLevel}/${TOTAL_LEVELS}`;
+                elements.coinsDisplay.textContent = `Coins: ${gameState.coinsBalance}`;
+                elements.quitButton.style.display = gameState.currentLevel > 1 ? 'block' : 'none';
+
+                elements.gameIcons.forEach((icon, index) => {
+                    const currentIcon = gameState.icons[index];
+                    
+                    if (currentIcon.revealed) {
+                        const prize = currentIcon.prize;
+                        if (prize.type === 'wild') {
+                            icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
+                        } else {
+                            icon.innerHTML = `<div class="prize-display">
+                                <span>💰</span>
+                                <span class="amount">${prize.amount}</span>
+                            </div>`;
+                        }
+                    } else {
+                        icon.innerHTML = `<img src="public/game-icons/icon${currentIcon.iconNumber}.png" alt="Game icon ${currentIcon.iconNumber}">`;
+                    }
+                });
+            }
+
             function showDialog(type) {
                 Object.values(elements.dialogs).forEach(dialog => dialog.style.display = 'none');
                 Object.values(elements.overlays).forEach(overlay => overlay.style.display = 'none');
                 elements.dialogs[type].style.display = 'block';
                 elements.overlays[type].style.display = 'block';
-                
-                if (type === 'win') {
-                    document.getElementById('finalScore').textContent = `Coins: ${gameState.coinsBalance}`;
-                }
             }
 
             function handleIconClick(index) {
@@ -327,7 +345,7 @@
                     
                     setTimeout(() => {
                         if (gameState.currentLevel === TOTAL_LEVELS) {
-                            document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
+                            document.getElementById('finalScore').textContent = `Coins: ${gameState.coinsBalance}`;
                             showDialog('win');
                             gameState.isPlaying = false;
                         } else {
@@ -362,7 +380,7 @@
             });
 
             elements.quitButton.addEventListener('click', () => {
-                document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
+                document.getElementById('finalScore').textContent = `Coins: ${gameState.coinsBalance}`;
                 showDialog('win');
                 gameState.isPlaying = false;
             });
