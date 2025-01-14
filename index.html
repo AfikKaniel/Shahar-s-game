@@ -5,6 +5,208 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>איך היא כזאת יפה מה זה</title>
     <style>
+        /* Same styles as before... */
+    </style>
+</head>
+<body>
+    <!-- Single game board -->
+    <div id="game-board">
+        <h1>איך היא כזאת יפה מה זה</h1>
+        
+        <div class="game-container">
+            <div class="level-header">
+                <div id="level-display" class="level-indicator">Level 1/6</div>
+                <button id="quit-button" class="quit-button" style="display: none;" onclick="handleQuit()">QUIT</button>
+            </div>
+
+            <div class="game-grid">
+                <button class="game-icon" onclick="handleIconClick(0)">
+                    <img src="public/game-icons/icon1.png" alt="Game icon 1">
+                </button>
+                <button class="game-icon" onclick="handleIconClick(1)">
+                    <img src="public/game-icons/icon2.png" alt="Game icon 2">
+                </button>
+                <button class="game-icon" onclick="handleIconClick(2)">
+                    <img src="public/game-icons/icon3.png" alt="Game icon 3">
+                </button>
+                <button class="game-icon" onclick="handleIconClick(3)">
+                    <img src="public/game-icons/icon4.png" alt="Game icon 4">
+                </button>
+            </div>
+
+            <div id="coins-display" class="coins-display">Coins: 0</div>
+        </div>
+    </div>
+
+    <!-- Dialogs -->
+    <div class="overlay" id="introOverlay"></div>
+    <div class="dialog" id="introDialog">
+        <h2>!המשחק של שחר</h2>
+        <p style="font-weight: bold;">
+            ?מי השחר ששווה הכי הרבה נקודות<br>
+            ולהיזהר מהעגבניות כמובן
+        </p>
+        <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <div class="overlay" id="gameOverOverlay"></div>
+    <div class="dialog" id="gameOverDialog">
+        <h2>GAME OVER</h2>
+        <button onclick="startGame()">START AGAIN</button>
+    </div>
+
+    <div class="overlay" id="winOverlay"></div>
+    <div class="dialog" id="winDialog">
+        <h2>You did it!</h2>
+        <p id="finalScore"></p>
+        <button onclick="startGame()">START AGAIN</button>
+    </div>
+
+    <script>
+        // Single game instance
+        const game = {
+            state: {
+                isPlaying: false,
+                currentLevel: 1,
+                coinsBalance: 0,
+                icons: []
+            },
+            
+            elements: {
+                levelDisplay: document.getElementById('level-display'),
+                coinsDisplay: document.getElementById('coins-display'),
+                quitButton: document.getElementById('quit-button'),
+                gameIcons: document.querySelectorAll('.game-icon')
+            },
+
+            updateUI() {
+                this.elements.levelDisplay.textContent = `Level ${this.state.currentLevel}/${TOTAL_LEVELS}`;
+                this.elements.coinsDisplay.textContent = `Coins: ${this.state.coinsBalance}`;
+                this.elements.quitButton.style.display = this.state.currentLevel > 1 ? 'block' : 'none';
+
+                this.elements.gameIcons.forEach((icon, index) => {
+                    if (this.state.icons[index]?.revealed) {
+                        const prize = this.state.icons[index].prize;
+                        if (prize.type === 'wild') {
+                            icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
+                        } else {
+                            icon.innerHTML = `<div class="prize-display">
+                                <span>💰</span>
+                                <span class="amount">${prize.amount}</span>
+                            </div>`;
+                        }
+                    } else {
+                        icon.innerHTML = `<img src="public/game-icons/icon${index + 1}.png" alt="Game icon ${index + 1}">`;
+                    }
+                });
+            },
+
+            initializeLevel() {
+                this.state.icons = Array(4).fill(null).map(() => ({
+                    revealed: false,
+                    prize: generatePrize()
+                }));
+
+                const hasWild = this.state.icons.some(icon => icon.prize.type === 'wild');
+                if (!hasWild) {
+                    const randomIndex = Math.floor(Math.random() * 4);
+                    this.state.icons[randomIndex].prize = { type: 'wild' };
+                }
+
+                this.updateUI();
+            },
+
+            start() {
+                this.state = {
+                    isPlaying: true,
+                    currentLevel: 1,
+                    coinsBalance: 0,
+                    icons: []
+                };
+                
+                this.initializeLevel();
+                document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
+            },
+
+            handleIconClick(index) {
+                if (!this.state.isPlaying || this.state.icons[index].revealed) return;
+
+                const icon = this.state.icons[index];
+                icon.revealed = true;
+                this.updateUI();
+
+                if (icon.prize.type === 'coins') {
+                    this.state.coinsBalance += icon.prize.amount;
+                    this.updateUI();
+                    
+                    setTimeout(() => {
+                        if (this.state.currentLevel === TOTAL_LEVELS) {
+                            document.getElementById('finalScore').textContent = `Coins collected: ${this.state.coinsBalance}`;
+                            showDialog('win');
+                            this.state.isPlaying = false;
+                        } else {
+                            this.state.currentLevel++;
+                            this.initializeLevel();
+                        }
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        showDialog('gameOver');
+                        this.state.isPlaying = false;
+                    }, 1000);
+                }
+            },
+
+            quit() {
+                document.getElementById('finalScore').textContent = `Coins collected: ${this.state.coinsBalance}`;
+                showDialog('win');
+                this.state.isPlaying = false;
+            }
+        };
+
+        // Global constants
+        const TOTAL_LEVELS = 6;
+        const CATEGORIES = {
+            1: { min: 1, max: 100 },
+            2: { min: 500, max: 1000 },
+            3: { min: 8000, max: 15000 }
+        };
+
+        // Helper functions
+        function getRandomInRange(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generatePrize() {
+            const rand = Math.random();
+            if (rand < 0.25) return { type: 'wild' };
+            if (rand < 0.5) return { type: 'coins', category: 1, amount: getRandomInRange(CATEGORIES[1].min, CATEGORIES[1].max) };
+            if (rand < 0.75) return { type: 'coins', category: 2, amount: getRandomInRange(CATEGORIES[2].min, CATEGORIES[2].max) };
+            return { type: 'coins', category: 3, amount: getRandomInRange(CATEGORIES[3].min, CATEGORIES[3].max) };
+        }
+
+        function showDialog(type) {
+            document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
+            document.getElementById(`${type}Dialog`).style.display = 'block';
+            document.getElementById(`${type}Overlay`).style.display = 'block';
+        }
+
+        // Global event handlers
+        window.startGame = () => game.start();
+        window.handleIconClick = (index) => game.handleIconClick(index);
+        window.handleQuit = () => game.quit();
+
+        // Initialize game
+        window.onload = () => showDialog('intro');
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>איך היא כזאת יפה מה זה</title>
+    <style>
         /* Base styles */
         html, body {
             background: #1E1E1E;
