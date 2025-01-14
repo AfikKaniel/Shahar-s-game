@@ -74,12 +74,24 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            margin-bottom: 20px;
         }
 
         .level-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .level-header .level-indicator,
+        .level-header .quit-button {
+            display: block;
+        }
+
+        /* Hide any level indicators or quit buttons outside of level-header */
+        .level-indicator:not(.level-header .level-indicator),
+        .quit-button:not(.level-header .quit-button) {
+            display: none !important;
         }
 
         .level-indicator {
@@ -247,7 +259,8 @@
     <div class="dialog" id="introDialog">
         <h2 style="color: black !important;">!המשחק של שחר</h2>
         <p style="color: black !important; font-weight: bold;">
-            ..מי השחר ששווה הכי הרבה נקודות? ולהיזהר מהעגבניות כמובן
+            ?מי השחר ששווה הכי הרבה נקודות<br>
+            ולהיזהר מהעגבניות כמובן
         </p>
         <button onclick="startGame()" style="background-color: #4CAF50 !important;">START GAME</button>
     </div>
