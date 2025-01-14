@@ -1,242 +1,311 @@
-import React, { useState, useEffect } from 'react';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>איך היא כזאת יפה מה זה</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
 
-const Game = () => {
-  const [gameState, setGameState] = useState({
-    isPlaying: false,
-    currentLevel: 1,
-    coinsBalance: 0,
-    showIntro: true,
-    showGameOver: false,
-    showWinning: false,
-    icons: [],
-  });
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
-  const TOTAL_LEVELS = 6;
-  const CATEGORIES = {
-    1: { min: 1, max: 100 },
-    2: { min: 500, max: 1000 },
-    3: { min: 8000, max: 15000 },
-  };
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-  // Generate random number within range
-  const getRandomInRange = (min, max) => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  };
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-  // Generate random prize category based on probabilities
-  const generatePrize = () => {
-    const rand = Math.random();
-    if (rand < 0.25) return { type: 'wild' };
-    if (rand < 0.5) return { type: 'coins', category: 1, amount: getRandomInRange(CATEGORIES[1].min, CATEGORIES[1].max) };
-    if (rand < 0.75) return { type: 'coins', category: 2, amount: getRandomInRange(CATEGORIES[2].min, CATEGORIES[2].max) };
-    return { type: 'coins', category: 3, amount: getRandomInRange(CATEGORIES[3].min, CATEGORIES[3].max) };
-  };
+        .level-indicator {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 8px 16px;
+            background-color: #e6f3ff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-  // Initialize level
-  const initializeLevel = () => {
-    const iconPositions = ['icon1', 'icon2', 'icon3', 'icon4'];
-    const shuffledIcons = iconPositions.sort(() => Math.random() - 0.5);
+        .quit-button {
+            padding: 8px 20px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .game-icon {
+            aspect-ratio: 1;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            padding: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .game-icon:hover {
+            transform: scale(1.02);
+        }
+
+        .game-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .prize-display {
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .coins-display {
+            background-color: #4477ff;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-align: center;
+            display: none;
+            min-width: 280px;
+        }
+
+        .dialog h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .dialog button {
+            background-color: #4477ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>איך היא כזאת יפה מה זה</h1>
     
-    const icons = shuffledIcons.map(icon => ({
-      id: icon,
-      revealed: false,
-      prize: generatePrize(),
-    }));
-
-    // Ensure exactly one wild icon
-    const hasWild = icons.some(icon => icon.prize.type === 'wild');
-    if (!hasWild) {
-      const randomIndex = Math.floor(Math.random() * 4);
-      icons[randomIndex].prize = { type: 'wild' };
-    }
-
-    setGameState(prev => ({
-      ...prev,
-      icons,
-    }));
-  };
-
-  // Start new game
-  const startGame = () => {
-    setGameState({
-      isPlaying: true,
-      currentLevel: 1,
-      coinsBalance: 0,
-      showIntro: false,
-      showGameOver: false,
-      showWinning: false,
-      icons: [],
-    });
-  };
-
-  // Handle icon click
-  const handleIconClick = (icon) => {
-    if (icon.revealed) return;
-
-    const updatedIcons = gameState.icons.map(i => 
-      i.id === icon.id ? { ...i, revealed: true } : i
-    );
-
-    const newBalance = gameState.coinsBalance + (icon.prize.type === 'coins' ? icon.prize.amount : 0);
-
-    setGameState(prev => ({
-      ...prev,
-      icons: updatedIcons,
-      coinsBalance: newBalance,
-    }));
-
-    // Delay the next action by 1 second
-    setTimeout(() => {
-      if (icon.prize.type === 'wild') {
-        setGameState(prev => ({
-          ...prev,
-          isPlaying: false,
-          showGameOver: true,
-        }));
-        return;
-      }
-
-      if (gameState.currentLevel === TOTAL_LEVELS) {
-        setGameState(prev => ({
-          ...prev,
-          isPlaying: false,
-          showWinning: true,
-        }));
-        return;
-      }
-
-      // Move to next level
-      setGameState(prev => ({
-        ...prev,
-        currentLevel: prev.currentLevel + 1,
-      }));
-    }, 1000);
-  };
-
-  // Handle quit
-  const handleQuit = () => {
-    setGameState(prev => ({
-      ...prev,
-      isPlaying: false,
-      showWinning: true,
-    }));
-  };
-
-  // Initialize level when starting or advancing
-  useEffect(() => {
-    if (gameState.isPlaying) {
-      initializeLevel();
-    }
-  }, [gameState.isPlaying, gameState.currentLevel]);
-
-  return (
-    <div className="w-full max-w-lg mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-8 rtl">איך היא כזאת יפה מה זה</h1>
-      
-      {/* Intro Dialog */}
-      <AlertDialog open={gameState.showIntro}>
-        <AlertDialogContent className="text-center">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold mb-4">Welcome to Shahar's game!</AlertDialogTitle>
-            <AlertDialogDescription className="text-lg font-semibold">
-              Collect as much money you can and avoid the tomato!
-              <br />
-              GOOD LUCK!
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={startGame} className="w-full">
-              START GAME
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Game Over Dialog */}
-      <AlertDialog open={gameState.showGameOver}>
-        <AlertDialogContent className="text-center">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold mb-4">GAME OVER</AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={startGame} className="w-full">
-              START AGAIN
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Winning Dialog */}
-      <AlertDialog open={gameState.showWinning}>
-        <AlertDialogContent className="text-center">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold mb-4">You did it!</AlertDialogTitle>
-            <AlertDialogDescription className="text-xl">
-              Coins collected: {gameState.coinsBalance}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={startGame} className="w-full">
-              START AGAIN
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {gameState.isPlaying && (
-        <div className="space-y-6 max-w-sm mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-xl font-bold py-2 px-4 bg-blue-100 rounded-lg shadow-md">
-              Level {gameState.currentLevel}/{TOTAL_LEVELS}
-            </div>
-            {gameState.currentLevel > 1 && (
-              <button
-                onClick={handleQuit}
-                className="text-lg font-semibold bg-red-500 text-white py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition-colors"
-              >
-                QUIT
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            {gameState.icons.map((icon, index) => (
-              <button
-                key={icon.id}
-                onClick={() => handleIconClick(icon)}
-                className="aspect-square bg-white shadow-lg rounded-xl p-2 flex items-center justify-center relative hover:shadow-xl transition-shadow"
-                disabled={icon.revealed}
-              >
-                {!icon.revealed ? (
-                  <img 
-                    src={`/game-icons/icon${index + 1}.png`}
-                    alt={`Game icon ${index + 1}`}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="text-4xl font-bold flex flex-col items-center justify-center w-full h-full">
-                    {icon.prize.type === 'wild' ? (
-                      <span className="text-6xl">🍅</span>
-                    ) : (
-                      <>
-                        <span className="text-3xl mb-1">💰</span>
-                        <span className="text-2xl text-center">{icon.prize.amount}</span>
-                      </>
-                    )}
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8 bg-blue-500 text-white py-4 px-6 rounded-lg shadow-md text-center">
-            <span className="text-xl font-bold">Coins: {gameState.coinsBalance}</span>
-          </div>
+    <div class="game-container">
+        <div class="level-header">
+            <div class="level-indicator">Level 1/6</div>
+            <button class="quit-button" style="display: none;" onclick="handleQuit()">QUIT</button>
         </div>
-      )}
-    </div>
-  );
-};
 
-export default Game;
+        <div class="game-grid">
+            <button class="game-icon" onclick="handleIconClick(0)">
+                <img src="game-icons/icon1.png" alt="Game icon 1">
+            </button>
+            <button class="game-icon" onclick="handleIconClick(1)">
+                <img src="game-icons/icon2.png" alt="Game icon 2">
+            </button>
+            <button class="game-icon" onclick="handleIconClick(2)">
+                <img src="game-icons/icon3.png" alt="Game icon 3">
+            </button>
+            <button class="game-icon" onclick="handleIconClick(3)">
+                <img src="game-icons/icon4.png" alt="Game icon 4">
+            </button>
+        </div>
+
+        <div class="coins-display">Coins: 0</div>
+    </div>
+
+    <!-- Intro Dialog -->
+    <div class="overlay" id="introOverlay"></div>
+    <div class="dialog" id="introDialog">
+        <h2>Welcome to Shahar's game!</h2>
+        <p style="font-weight: bold;">
+            Collect as much money you can and avoid the tomato!<br>
+            GOOD LUCK!
+        </p>
+        <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <!-- Game Over Dialog -->
+    <div class="overlay" id="gameOverOverlay"></div>
+    <div class="dialog" id="gameOverDialog">
+        <h2>GAME OVER</h2>
+        <button onclick="startGame()">START AGAIN</button>
+    </div>
+
+    <!-- Win Dialog -->
+    <div class="overlay" id="winOverlay"></div>
+    <div class="dialog" id="winDialog">
+        <h2>You did it!</h2>
+        <p id="finalScore"></p>
+        <button onclick="startGame()">START AGAIN</button>
+    </div>
+
+    <script>
+        let gameState = {
+            isPlaying: false,
+            currentLevel: 1,
+            coinsBalance: 0,
+            icons: []
+        };
+
+        const TOTAL_LEVELS = 6;
+        const CATEGORIES = {
+            1: { min: 1, max: 100 },
+            2: { min: 500, max: 1000 },
+            3: { min: 8000, max: 15000 }
+        };
+
+        function getRandomInRange(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generatePrize() {
+            const rand = Math.random();
+            if (rand < 0.25) return { type: 'wild' };
+            if (rand < 0.5) return { type: 'coins', category: 1, amount: getRandomInRange(CATEGORIES[1].min, CATEGORIES[1].max) };
+            if (rand < 0.75) return { type: 'coins', category: 2, amount: getRandomInRange(CATEGORIES[2].min, CATEGORIES[2].max) };
+            return { type: 'coins', category: 3, amount: getRandomInRange(CATEGORIES[3].min, CATEGORIES[3].max) };
+        }
+
+        function initializeLevel() {
+            const icons = Array(4).fill(null).map(() => ({
+                revealed: false,
+                prize: generatePrize()
+            }));
+
+            // Ensure exactly one wild icon
+            const hasWild = icons.some(icon => icon.prize.type === 'wild');
+            if (!hasWild) {
+                const randomIndex = Math.floor(Math.random() * 4);
+                icons[randomIndex].prize = { type: 'wild' };
+            }
+
+            gameState.icons = icons;
+            updateUI();
+        }
+
+        function updateUI() {
+            document.querySelector('.level-indicator').textContent = `Level ${gameState.currentLevel}/${TOTAL_LEVELS}`;
+            document.querySelector('.coins-display').textContent = `Coins: ${gameState.coinsBalance}`;
+            document.querySelector('.quit-button').style.display = gameState.currentLevel > 1 ? 'block' : 'none';
+
+            const icons = document.querySelectorAll('.game-icon');
+            icons.forEach((icon, index) => {
+                if (gameState.icons[index]?.revealed) {
+                    const prize = gameState.icons[index].prize;
+                    icon.innerHTML = prize.type === 'wild' ? 
+                        '<div class="prize-display">🍅</div>' : 
+                        `<div class="prize-display">💰<br>${prize.amount}</div>`;
+                } else {
+                    icon.innerHTML = `<img src="game-icons/icon${index + 1}.png" alt="Game icon ${index + 1}">`;
+                }
+            });
+        }
+
+        function showDialog(dialogId) {
+            document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
+            document.getElementById(dialogId + 'Dialog').style.display = 'block';
+            document.getElementById(dialogId + 'Overlay').style.display = 'block';
+        }
+
+        function handleIconClick(index) {
+            if (!gameState.isPlaying || gameState.icons[index].revealed) return;
+
+            const icon = gameState.icons[index];
+            icon.revealed = true;
+            updateUI();
+
+            if (icon.prize.type === 'coins') {
+                gameState.coinsBalance += icon.prize.amount;
+                updateUI();
+                
+                setTimeout(() => {
+                    if (gameState.currentLevel === TOTAL_LEVELS) {
+                        document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
+                        showDialog('win');
+                        gameState.isPlaying = false;
+                    } else {
+                        gameState.currentLevel++;
+                        initializeLevel();
+                    }
+                }, 1000);
+            } else {
+                setTimeout(() => {
+                    showDialog('gameOver');
+                    gameState.isPlaying = false;
+                }, 1000);
+            }
+        }
+
+        function handleQuit() {
+            document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
+            showDialog('win');
+            gameState.isPlaying = false;
+        }
+
+        function startGame() {
+            gameState = {
+                isPlaying: true,
+                currentLevel: 1,
+                coinsBalance: 0,
+                icons: []
+            };
+            initializeLevel();
+            document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
+        }
+
+        // Show intro dialog on load
+        window.onload = () => showDialog('intro');
+    </script>
+</body>
+</html>
