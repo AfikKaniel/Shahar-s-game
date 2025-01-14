@@ -1,28 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>איך היא כזאת יפה מה זה</title>
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
+        /* Reset */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        html, body {
-            background: #1E1E1E;
+        /* Base styles */
+        html {
+            background-color: #1E1E1E;
             height: 100%;
         }
 
         body {
+            background-color: #1E1E1E;
+            min-height: 100%;
             padding: 15px;
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
         }
 
-        .game-wrapper {
+        #game-container {
             max-width: 450px;
             margin: 0 auto;
             display: flex;
@@ -34,6 +41,7 @@
             text-align: center;
             font-size: calc(20px + 2vw);
             margin-bottom: 20px;
+            direction: rtl;
         }
 
         .level-header {
@@ -61,6 +69,7 @@
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
+            -webkit-appearance: none;
         }
 
         .game-grid {
@@ -80,6 +89,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            -webkit-appearance: none;
         }
 
         .game-icon img {
@@ -92,6 +102,7 @@
         .prize-display {
             font-size: min(10vw, 48px);
             text-align: center;
+            color: white;
         }
 
         .prize-display.wild-icon {
@@ -102,7 +113,7 @@
             font-size: min(8vw, 36px);
         }
 
-        .coins-display {
+        #coins-display {
             background-color: #2D2D2D;
             color: #FFD700;
             padding: 16px;
@@ -133,6 +144,7 @@
         .dialog p {
             color: black;
             margin-bottom: 20px;
+            direction: rtl;
         }
 
         .dialog button {
@@ -144,6 +156,7 @@
             font-size: 16px;
             cursor: pointer;
             width: 100%;
+            -webkit-appearance: none;
         }
 
         .overlay {
@@ -159,30 +172,22 @@
     </style>
 </head>
 <body>
-    <div class="game-wrapper">
+    <div id="game-container">
         <h1>איך היא כזאת יפה מה זה</h1>
         
         <div class="level-header">
             <div class="level-indicator">Level 1/6</div>
-            <button class="quit-button" style="display: none;" onclick="handleQuit()">QUIT</button>
+            <button class="quit-button" style="display: none;">QUIT</button>
         </div>
 
         <div class="game-grid">
-            <button class="game-icon" onclick="handleIconClick(0)">
-                <img src="public/game-icons/icon1.png" alt="Game icon 1">
-            </button>
-            <button class="game-icon" onclick="handleIconClick(1)">
-                <img src="public/game-icons/icon2.png" alt="Game icon 2">
-            </button>
-            <button class="game-icon" onclick="handleIconClick(2)">
-                <img src="public/game-icons/icon3.png" alt="Game icon 3">
-            </button>
-            <button class="game-icon" onclick="handleIconClick(3)">
-                <img src="public/game-icons/icon4.png" alt="Game icon 4">
-            </button>
+            <button class="game-icon"><img src="public/game-icons/icon1.png" alt="Game icon 1"></button>
+            <button class="game-icon"><img src="public/game-icons/icon2.png" alt="Game icon 2"></button>
+            <button class="game-icon"><img src="public/game-icons/icon3.png" alt="Game icon 3"></button>
+            <button class="game-icon"><img src="public/game-icons/icon4.png" alt="Game icon 4"></button>
         </div>
 
-        <div class="coins-display">Coins: 0</div>
+        <div id="coins-display">Coins: 0</div>
     </div>
 
     <!-- Dialogs -->
@@ -193,143 +198,174 @@
             ?מי השחר ששווה הכי הרבה נקודות<br>
             ולהיזהר מהעגבניות כמובן
         </p>
-        <button onclick="startGame()">START GAME</button>
+        <button>START GAME</button>
     </div>
 
     <div class="overlay" id="gameOverOverlay"></div>
     <div class="dialog" id="gameOverDialog">
         <h2>GAME OVER</h2>
-        <button onclick="startGame()">START AGAIN</button>
+        <button>START AGAIN</button>
     </div>
 
     <div class="overlay" id="winOverlay"></div>
     <div class="dialog" id="winDialog">
         <h2>You did it!</h2>
         <p id="finalScore"></p>
-        <button onclick="startGame()">START AGAIN</button>
+        <button>START AGAIN</button>
     </div>
 
     <script>
-        const TOTAL_LEVELS = 6;
-        const CATEGORIES = {
-            1: { min: 1, max: 100 },
-            2: { min: 500, max: 1000 },
-            3: { min: 8000, max: 15000 }
-        };
+        // Wait for DOM to be fully loaded before initializing
+        document.addEventListener('DOMContentLoaded', function() {
+            const TOTAL_LEVELS = 6;
+            const CATEGORIES = {
+                1: { min: 1, max: 100 },
+                2: { min: 500, max: 1000 },
+                3: { min: 8000, max: 15000 }
+            };
 
-        let gameState = {
-            isPlaying: false,
-            currentLevel: 1,
-            coinsBalance: 0,
-            icons: []
-        };
-
-        function getRandomInRange(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function generatePrize() {
-            const rand = Math.random();
-            if (rand < 0.25) return { type: 'wild' };
-            if (rand < 0.5) return { type: 'coins', category: 1, amount: getRandomInRange(CATEGORIES[1].min, CATEGORIES[1].max) };
-            if (rand < 0.75) return { type: 'coins', category: 2, amount: getRandomInRange(CATEGORIES[2].min, CATEGORIES[2].max) };
-            return { type: 'coins', category: 3, amount: getRandomInRange(CATEGORIES[3].min, CATEGORIES[3].max) };
-        }
-
-        function updateUI() {
-            document.querySelector('.level-indicator').textContent = `Level ${gameState.currentLevel}/${TOTAL_LEVELS}`;
-            document.querySelector('.coins-display').textContent = `Coins: ${gameState.coinsBalance}`;
-            document.querySelector('.quit-button').style.display = gameState.currentLevel > 1 ? 'block' : 'none';
-
-            document.querySelectorAll('.game-icon').forEach((icon, index) => {
-                if (gameState.icons[index]?.revealed) {
-                    const prize = gameState.icons[index].prize;
-                    if (prize.type === 'wild') {
-                        icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
-                    } else {
-                        icon.innerHTML = `<div class="prize-display">
-                            <span>💰</span>
-                            <span class="amount">${prize.amount}</span>
-                        </div>`;
-                    }
-                } else {
-                    icon.innerHTML = `<img src="public/game-icons/icon${index + 1}.png" alt="Game icon ${index + 1}">`;
-                }
-            });
-        }
-
-        function initializeLevel() {
-            const icons = Array(4).fill(null).map(() => ({
-                revealed: false,
-                prize: generatePrize()
-            }));
-
-            const hasWild = icons.some(icon => icon.prize.type === 'wild');
-            if (!hasWild) {
-                const randomIndex = Math.floor(Math.random() * 4);
-                icons[randomIndex].prize = { type: 'wild' };
-            }
-
-            gameState.icons = icons;
-            updateUI();
-        }
-
-        function showDialog(type) {
-            document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
-            document.getElementById(`${type}Dialog`).style.display = 'block';
-            document.getElementById(`${type}Overlay`).style.display = 'block';
-        }
-
-        function handleIconClick(index) {
-            if (!gameState.isPlaying || gameState.icons[index].revealed) return;
-
-            const icon = gameState.icons[index];
-            icon.revealed = true;
-            updateUI();
-
-            if (icon.prize.type === 'coins') {
-                gameState.coinsBalance += icon.prize.amount;
-                updateUI();
-                
-                setTimeout(() => {
-                    if (gameState.currentLevel === TOTAL_LEVELS) {
-                        document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
-                        showDialog('win');
-                        gameState.isPlaying = false;
-                    } else {
-                        gameState.currentLevel++;
-                        initializeLevel();
-                    }
-                }, 1000);
-            } else {
-                setTimeout(() => {
-                    showDialog('gameOver');
-                    gameState.isPlaying = false;
-                }, 1000);
-            }
-        }
-
-        function handleQuit() {
-            document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
-            showDialog('win');
-            gameState.isPlaying = false;
-        }
-
-        function startGame() {
-            gameState = {
-                isPlaying: true,
+            const gameState = {
+                isPlaying: false,
                 currentLevel: 1,
                 coinsBalance: 0,
                 icons: []
             };
-            
-            initializeLevel();
-            document.querySelectorAll('.dialog, .overlay').forEach(el => el.style.display = 'none');
-        }
 
-        window.onload = () => {
+            // Cache DOM elements
+            const elements = {
+                container: document.getElementById('game-container'),
+                levelIndicator: document.querySelector('.level-indicator'),
+                quitButton: document.querySelector('.quit-button'),
+                coinsDisplay: document.getElementById('coins-display'),
+                gameIcons: Array.from(document.querySelectorAll('.game-icon')),
+                dialogs: {
+                    intro: document.getElementById('introDialog'),
+                    gameOver: document.getElementById('gameOverDialog'),
+                    win: document.getElementById('winDialog')
+                },
+                overlays: {
+                    intro: document.getElementById('introOverlay'),
+                    gameOver: document.getElementById('gameOverOverlay'),
+                    win: document.getElementById('winOverlay')
+                }
+            };
+
+            function getRandomInRange(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            function generatePrize() {
+                const rand = Math.random();
+                if (rand < 0.25) return { type: 'wild' };
+                if (rand < 0.5) return { type: 'coins', category: 1, amount: getRandomInRange(CATEGORIES[1].min, CATEGORIES[1].max) };
+                if (rand < 0.75) return { type: 'coins', category: 2, amount: getRandomInRange(CATEGORIES[2].min, CATEGORIES[2].max) };
+                return { type: 'coins', category: 3, amount: getRandomInRange(CATEGORIES[3].min, CATEGORIES[3].max) };
+            }
+
+            function updateUI() {
+                elements.levelIndicator.textContent = `Level ${gameState.currentLevel}/${TOTAL_LEVELS}`;
+                elements.coinsDisplay.textContent = `Coins: ${gameState.coinsBalance}`;
+                elements.quitButton.style.display = gameState.currentLevel > 1 ? 'block' : 'none';
+
+                elements.gameIcons.forEach((icon, index) => {
+                    if (gameState.icons[index]?.revealed) {
+                        const prize = gameState.icons[index].prize;
+                        if (prize.type === 'wild') {
+                            icon.innerHTML = '<div class="prize-display wild-icon">🍅</div>';
+                        } else {
+                            icon.innerHTML = `<div class="prize-display">
+                                <span>💰</span>
+                                <span class="amount">${prize.amount}</span>
+                            </div>`;
+                        }
+                    } else {
+                        icon.innerHTML = `<img src="public/game-icons/icon${index + 1}.png" alt="Game icon ${index + 1}">`;
+                    }
+                });
+            }
+
+            function initializeLevel() {
+                gameState.icons = Array(4).fill(null).map(() => ({
+                    revealed: false,
+                    prize: generatePrize()
+                }));
+
+                const hasWild = gameState.icons.some(icon => icon.prize.type === 'wild');
+                if (!hasWild) {
+                    const randomIndex = Math.floor(Math.random() * 4);
+                    gameState.icons[randomIndex].prize = { type: 'wild' };
+                }
+
+                updateUI();
+            }
+
+            function showDialog(type) {
+                Object.values(elements.dialogs).forEach(dialog => dialog.style.display = 'none');
+                Object.values(elements.overlays).forEach(overlay => overlay.style.display = 'none');
+                elements.dialogs[type].style.display = 'block';
+                elements.overlays[type].style.display = 'block';
+            }
+
+            function handleIconClick(index) {
+                if (!gameState.isPlaying || gameState.icons[index].revealed) return;
+
+                const icon = gameState.icons[index];
+                icon.revealed = true;
+                updateUI();
+
+                if (icon.prize.type === 'coins') {
+                    gameState.coinsBalance += icon.prize.amount;
+                    updateUI();
+                    
+                    setTimeout(() => {
+                        if (gameState.currentLevel === TOTAL_LEVELS) {
+                            document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
+                            showDialog('win');
+                            gameState.isPlaying = false;
+                        } else {
+                            gameState.currentLevel++;
+                            initializeLevel();
+                        }
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        showDialog('gameOver');
+                        gameState.isPlaying = false;
+                    }, 1000);
+                }
+            }
+
+            function startGame() {
+                Object.assign(gameState, {
+                    isPlaying: true,
+                    currentLevel: 1,
+                    coinsBalance: 0,
+                    icons: []
+                });
+                
+                initializeLevel();
+                Object.values(elements.dialogs).forEach(dialog => dialog.style.display = 'none');
+                Object.values(elements.overlays).forEach(overlay => overlay.style.display = 'none');
+            }
+
+            // Event Listeners
+            elements.gameIcons.forEach((icon, index) => {
+                icon.addEventListener('click', () => handleIconClick(index));
+            });
+
+            elements.quitButton.addEventListener('click', () => {
+                document.getElementById('finalScore').textContent = `Coins collected: ${gameState.coinsBalance}`;
+                showDialog('win');
+                gameState.isPlaying = false;
+            });
+
+            document.querySelectorAll('.dialog button').forEach(button => {
+                button.addEventListener('click', startGame);
+            });
+
+            // Start the game
             showDialog('intro');
-        };
+        });
     </script>
 </body>
 </html>
